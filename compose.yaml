@@ -1,0 +1,18 @@
+services:
+  mysql:
+    image: mysql:8.4
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_DATABASE: food_ordering
+      MYSQL_USER: food_app
+      MYSQL_PASSWORD: local-food-password
+      MYSQL_ROOT_PASSWORD: local-root-password
+    volumes:
+      - food_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 20
+volumes:
+  food_mysql:
