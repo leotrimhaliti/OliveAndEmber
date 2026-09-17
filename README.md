@@ -4,6 +4,12 @@ A single-restaurant ordering demo built for a technical hiring challenge. Custom
 
 The repository now includes a production container setup for a same-origin React/Laravel deployment, a managed MySQL environment contract, database-backed readiness checks, and a scripted release path. See [DEPLOYMENT.md](DEPLOYMENT.md) for staging, HTTPS, secrets, rollback, and backup procedures.
 
+## AI conversation and disclosure
+
+Reviewers can find the project’s AI collaboration record in **[ai-log.txt](ai-log.txt)** at the repository root. It contains the original brief, the available user prompts, verified implementation outcomes, and clearly labeled reconstructed summaries where older assistant responses were not available verbatim.
+
+The supporting **[AI_USAGE.md](AI_USAGE.md)** explains how AI was used and how its work was checked. **[VERIFICATION.md](VERIFICATION.md)** records the tests and manual checks that were actually completed. If the hiring process requires a word-for-word transcript, the original Codex conversation export should be submitted alongside these repository files; `ai-log.txt` does not misrepresent reconstructed sections as verbatim messages.
+
 ## Stack and prerequisites
 
 | Component | Version used |

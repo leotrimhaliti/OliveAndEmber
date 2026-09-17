@@ -4,6 +4,22 @@ OLIVE & EMBER — AI COLLABORATION LOG
 Created: 2026-09-17
 Repository: https://github.com/leotrimhaliti/OliveAndEmber
 
+REVIEWER QUICK LINKS
+--------------------
+AI collaboration log (this file):
+https://github.com/leotrimhaliti/OliveAndEmber/blob/main/ai-log.txt
+
+AI usage and verification explanation:
+https://github.com/leotrimhaliti/OliveAndEmber/blob/main/AI_USAGE.md
+
+Executed test and manual-check record:
+https://github.com/leotrimhaliti/OliveAndEmber/blob/main/VERIFICATION.md
+
+Project setup, architecture, API, and demo instructions:
+https://github.com/leotrimhaliti/OliveAndEmber/blob/main/README.md
+
+The AI conversation record is intentionally stored as ai-log.txt in the repository root so a reviewer can find it immediately from README.md.
+
 IMPORTANT TRANSCRIPT NOTE
 -------------------------
 This file is a comprehensive project log assembled from the conversation content still available in the Codex task, the original attached brief, and the repository's Git history. User prompts reproduced below are verbatim where they were available. Some earlier assistant replies are no longer available word-for-word in the active task context, so those entries are explicitly labeled "Reconstructed assistant work summary." They describe verified work and must not be presented as verbatim quotations.
