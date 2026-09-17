@@ -17,7 +17,7 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
@@ -42,8 +42,8 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           cache: npm
@@ -55,9 +55,9 @@ jobs:
   deployment:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: sh -n deploy/app-entrypoint.sh deploy/release.sh
       - run: docker build --tag olive-and-ember-app:ci --file deploy/Dockerfile.app .
       - run: docker build --tag olive-and-ember-web:ci --file deploy/Dockerfile.web .
       - run: docker run --rm --entrypoint php olive-and-ember-app:ci artisan --version
-      - run: docker run --rm olive-and-ember-web:ci nginx -t
+      - run: docker run --rm --add-host app:127.0.0.1 olive-and-ember-web:ci nginx -t
