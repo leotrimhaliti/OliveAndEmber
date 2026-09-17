@@ -28,9 +28,9 @@ Install PHP with `ctype`, `curl`, `dom`, `fileinfo`, `filter`, `hash`, `mbstring
 
 Run these commands from the repository root. Shell examples work in PowerShell unless otherwise noted.
 
-### 1. Start MySQL
+### 1. Start MySQL and Mailpit
 
-The supplied Compose file starts a project-specific MySQL 8.4 instance on **3307**, avoiding an existing XAMPP instance on 3306:
+The supplied Compose file starts a project-specific MySQL 8.4 instance on **3307** and a local Mailpit inbox. Mailpit accepts SMTP on **1025** and serves its browser inbox on **http://127.0.0.1:8025**. Both Mailpit ports bind only to the local machine.
 
 ```sh
 docker compose up -d --wait
@@ -69,6 +69,11 @@ DB_USERNAME=food_app
 DB_PASSWORD=local-food-password
 SESSION_DRIVER=database
 SANCTUM_STATEFUL_DOMAINS=localhost:5173,127.0.0.1:5173,localhost:8000,127.0.0.1:8000
+MAIL_MAILER=smtp
+MAIL_SCHEME=null
+MAIL_HOST=127.0.0.1
+MAIL_PORT=1025
+MAIL_FROM_ADDRESS=hello@olive-and-ember.local
 ```
 
 Create the first administrator invitation from the backend with `php artisan admin:invite admin@example.com`. The command prints a one-time code that expires after 48 hours by default; change that with `--expires=24`. Once an administrator has verified their email and enabled two-factor authentication, they can issue and revoke further invitations from **Account security**. Only a hash is stored, every code can be claimed once, and an optional email restriction prevents forwarding it to another address.
@@ -82,7 +87,7 @@ npm ci
 
 There are no frontend secrets or required frontend environment variables. Vite proxies `/api` and `/sanctum` to `http://127.0.0.1:8000`.
 
-### 4. Start both servers
+### 4. Start the application
 
 Terminal 1, from `backend/`:
 
@@ -98,6 +103,8 @@ npm run dev
 
 Open **http://127.0.0.1:5173**. Use the same hostname consistently; `localhost` and `127.0.0.1` have separate cookies. If you change the frontend port, update both Vite and `SANCTUM_STATEFUL_DOMAINS`.
 
+Open **http://127.0.0.1:8025** to read verification and password-reset emails captured by Mailpit. Mailpit is a development inbox: it captures messages locally and does not deliver them to a real email account.
+
 For the original Windows workspace, these equivalent commands select the portable PHP explicitly:
 
 ```powershell
@@ -110,7 +117,9 @@ cd frontend
 npm run dev
 ```
 
-After installation and migration, Windows users may also run `./scripts/start-demo.ps1` from the root. It starts both servers in hidden windows, prints their process IDs, and writes logs under `.tools/`. It refuses to start if either port is already occupied. Stop the servers with Ctrl+C when using terminal commands; for the convenience launcher use the printed process IDs in Task Manager.
+On Windows without Docker, first run `./scripts/install-mailpit.ps1`. The script downloads the pinned official Mailpit binary, verifies its SHA-256 checksum, and stores it under the ignored `.tools` directory.
+
+After installation and migration, Windows users may run `./scripts/start-demo.ps1` from the root. It starts Mailpit and both application servers in hidden windows, prints their process IDs, and writes logs under `.tools/`. It refuses to start if any required port is already occupied. Stop manually launched servers with Ctrl+C; for the convenience launcher use the printed process IDs in Task Manager.
 
 ### Demo accounts
 

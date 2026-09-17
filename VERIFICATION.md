@@ -14,6 +14,7 @@ Performed during implementation on 2026-09-17 in the Windows workspace. This is 
 | Composer dependency installation/update advisory check | No security advisories reported |
 | npm install audit | No vulnerabilities reported |
 | Development migrations and seeding | Passed on local MariaDB |
+| Mailpit SMTP capture | Mailpit 1.31.1 accepted a real Laravel email-verification notification; message visible through the local API/UI |
 | Pre-push staged secret and ignored-file scan | Passed; no live credential or ignored runtime file was committed |
 | GitHub Actions on Phase 2 commit `931a46d` | Backend, frontend, production app image, production web image, and Nginx validation passed |
 
