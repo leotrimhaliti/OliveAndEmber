@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ArrowRight, Leaf } from 'lucide-react'
+import { ArrowRight, KeyRound, Leaf } from 'lucide-react'
 import { api } from '../lib/api'
 import { useShop } from '../context'
 import { ErrorBox } from '../components'
@@ -73,6 +73,12 @@ export default function Auth({ register = false }) {
           />
           {register && <small>Use 10–72 characters (at most 72 bytes).</small>}
         </label>
+        {!register && (
+          <Link className="forgot-link" to="/forgot-password">
+            <KeyRound size={13} />
+            Forgot your password?
+          </Link>
+        )}
         {register && (
           <>
             <label>
@@ -99,11 +105,6 @@ export default function Auth({ register = false }) {
           {busy ? 'One moment…' : register ? 'Create account' : 'Sign in'}
           <ArrowRight size={17} />
         </button>
-        {!register && (
-          <Link className="forgot-link" to="/forgot-password">
-            Forgot your password?
-          </Link>
-        )}
         <div className="form-footer">
           {register ? 'Already part of the table?' : 'New around here?'}{' '}
           <Link state={{ from }} to={register ? '/login' : '/register'}>

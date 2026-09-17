@@ -207,7 +207,7 @@ main {
 .icon-button {
   background: transparent;
   border: none;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 34px;
@@ -1705,7 +1705,27 @@ dialog.modal {
   max-width: calc(100vw - 32px);
 }
 
-.forgot-link,
+.forgot-link {
+  align-items: center;
+  color: var(--green);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 650;
+  gap: 6px;
+  justify-content: flex-end;
+  margin: -7px 0 20px auto;
+  text-decoration: none;
+  text-underline-offset: 3px;
+  width: fit-content;
+}
+.forgot-link:hover {
+  text-decoration: underline;
+}
+.forgot-link:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid #8da38f;
+  outline-offset: 4px;
+}
 .access-switch {
   align-self: center;
   color: var(--green);
