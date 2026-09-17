@@ -1,0 +1,47 @@
+name: olive-and-ember
+
+services:
+  app:
+    image: olive-and-ember-app:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.app
+    env_file:
+      - deploy/production.env
+    restart: unless-stopped
+    expose:
+      - '9000'
+    healthcheck:
+      test: ['CMD', 'php-fpm', '-t']
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks:
+      - app-internal
+
+  web:
+    image: olive-and-ember-web:${IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.web
+    depends_on:
+      app:
+        condition: service_healthy
+    restart: unless-stopped
+    ports:
+      - '${APP_PORT:-8080}:8080'
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://127.0.0.1:8080/ready']
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - edge
+      - app-internal
+
+networks:
+  edge:
+  app-internal:
+    internal: true

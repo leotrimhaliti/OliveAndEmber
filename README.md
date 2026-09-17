@@ -2,6 +2,8 @@
 
 A single-restaurant ordering demo built for a technical hiring challenge. Customers browse dishes, keep a persistent bag, check out, and revisit their orders. Invited administrators manage products and order statuses.
 
+The repository now includes a production container setup for a same-origin React/Laravel deployment, a managed MySQL environment contract, database-backed readiness checks, and a scripted release path. See [DEPLOYMENT.md](DEPLOYMENT.md) for staging, HTTPS, secrets, rollback, and backup procedures.
+
 ## Stack and prerequisites
 
 | Component | Version used |
@@ -236,7 +238,7 @@ erDiagram
 
 One restaurant, USD, tax-inclusive displayed prices, free delivery, payment on delivery, and illustrative delivery estimates. No payment processing, maps, live tracking, inventory quantities, email verification/password reset, or category CRUD. Admins may set any of the five valid statuses to correct mistakes; there is no enforced transition graph. Status refresh is manual.
 
-The invite code is a shared, reusable server secret and should be rotated after onboarding. The public catalog is unpaginated. There is no checkout idempotency key: buttons prevent normal double-click submissions, but ambiguous network failures need checking order history before retrying. Prices can change while a cart is open; the server always uses current database prices. Multiple browser tabs do not synchronize carts. No production hosting, email delivery, load testing, or comprehensive accessibility audit was performed. External images/fonts require internet access. Use HTTPS, secure cookies, restricted database credentials, and `APP_DEBUG=false` if deploying beyond localhost.
+The invite code is a shared, reusable server secret and should be rotated after onboarding. The public catalog is unpaginated. There is no checkout idempotency key: buttons prevent normal double-click submissions, but ambiguous network failures need checking order history before retrying. Prices can change while a cart is open; the server always uses current database prices. Multiple browser tabs do not synchronize carts. The repository contains production deployment configuration, but no cloud environment is provisioned from this repository. Email delivery, load testing, and a comprehensive accessibility audit have not been performed. External images/fonts require internet access.
 
 ## Five-day implementation/review plan
 

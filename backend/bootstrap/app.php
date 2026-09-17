@@ -15,6 +15,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $configuredProxies = env('TRUSTED_PROXIES');
+        if ($configuredProxies) {
+            $middleware->trustProxies(
+                at: $configuredProxies === '*'
+                    ? '*'
+                    : array_values(array_filter(array_map('trim', explode(',', $configuredProxies)))),
+            );
+        }
+
         $middleware->statefulApi();
         $middleware->alias(['admin' => RequireAdmin::class]);
     })

@@ -16,4 +16,11 @@ class ExampleTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_readiness_check_confirms_database_connectivity(): void
+    {
+        $this->getJson('/ready')
+            ->assertOk()
+            ->assertExactJson(['status' => 'ready']);
+    }
 }

@@ -9,3 +9,4 @@ frontend/dist/
 .DS_Store
 playwright-report/
 test-results/
+deploy/production.env
