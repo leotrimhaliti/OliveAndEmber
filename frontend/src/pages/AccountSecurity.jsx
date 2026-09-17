@@ -251,7 +251,7 @@ function InvitationManager({ setNotice }) {
       <ErrorBox error={error} />
       <form className="invitation-form" onSubmit={create}>
         <label>
-          Invitee email <small>(optional)</small>
+          <span>Invitee email <small>(optional)</small></span>
           <input name="email" type="email" autoComplete="off" />
         </label>
         <label>

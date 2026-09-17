@@ -1782,7 +1782,15 @@ dialog.modal {
   padding: 11px 15px;
 }
 .invitations { display: grid; gap: 22px; margin-top: 22px; }
-.invitation-form { align-items: end; display: grid; gap: 14px; grid-template-columns: minmax(220px, 1fr) 170px auto; }
+.invitation-form {
+  align-items: end;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(220px, 1fr) 170px auto;
+}
+.invitation-form label { margin-bottom: 0; }
+.invitation-form label > span small { margin-left: 4px; }
+.invitation-form .button { min-height: 42px; }
 .issued-code {
   align-items: center;
   background: #fff8dd;
@@ -1805,5 +1813,6 @@ dialog.modal {
   .security-grid { grid-template-columns: 1fr; }
   .invitation-form,
   .issued-code { align-items: stretch; grid-template-columns: 1fr; }
+  .invitation-form .button { width: 100%; }
   .status-history li { grid-template-columns: 1fr; }
 }
