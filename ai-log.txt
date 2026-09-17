@@ -3,6 +3,7 @@ OLIVE & EMBER — AI COLLABORATION LOG
 
 Created: 2026-09-17
 Repository: https://github.com/leotrimhaliti/OliveAndEmber
+Status: Living log — continue appending new conversation entries until the project conversation is finished.
 
 REVIEWER QUICK LINKS
 --------------------
@@ -391,6 +392,32 @@ Assistant action:
 - Explicitly distinguished reconstructed summaries from verbatim transcript text.
 
 
+16. REVIEWER LINKS FOR THE AI CONVERSATION
+==========================================
+
+User prompt (verbatim):
+"can u update the readmefile and ai-log.txt to include the file for whoever checks for the ai conversation to make it easier?"
+
+Assistant action:
+- Added a prominent “AI conversation and disclosure” section near the top of README.md.
+- Linked directly to ai-log.txt, AI_USAGE.md, and VERIFICATION.md.
+- Added the “Reviewer quick links” section at the top of this file with direct GitHub URLs.
+- Committed and pushed the documentation update:
+  a5d81d3 docs: link AI conversation record
+
+
+17. KEEPING THIS LOG CURRENT
+============================
+
+User prompt (verbatim):
+"when i told u to update the ai-log i meant include whatever im saying as i go, i might not be finished yet"
+
+Assistant response/action:
+- Confirmed that ai-log.txt will be maintained as a living log rather than treated as a finished artifact.
+- From this point forward, new user requests and their completed outcomes will be appended as the conversation continues.
+- Added this clarification and the preceding reviewer-links request to the log.
+
+
 VERIFIED COMMIT TIMELINE
 ========================
 
@@ -405,9 +432,11 @@ e1298f3  ci: validate nginx with internal app host
 caa9353  fix: align administrator invitation form
 b0908c3  refactor: simplify landing page labels
 a15d902  Prepare production SEO metadata
+efb9676  docs: add AI collaboration log
+a5d81d3  docs: link AI conversation record
 
 
 FINAL SUBMISSION REMINDER
 =========================
 
-Export the complete original conversation from Codex for the hiring submission. Submit that exported transcript with this repository, AI_USAGE.md, and this ai-log.txt. This file is intentionally honest about which portions are verbatim and which were reconstructed from verified project history.
+Keep appending new conversation entries to this living log until the project discussion is complete. Then export the complete original conversation from Codex for the hiring submission. Submit that exported transcript with this repository, AI_USAGE.md, and this ai-log.txt. This file is intentionally honest about which portions are verbatim and which were reconstructed from verified project history.
