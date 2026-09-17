@@ -242,18 +242,12 @@ main {
   align-items: center;
   color: #55705a;
 }
-.live-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #69956a;
-}
 .hero h1 {
   font-size: 52px;
   font-weight: 800;
   line-height: 1.13;
   letter-spacing: -2.7px;
-  margin: 20px 0 18px;
+  margin: 0 0 18px;
 }
 .hero h1 em {
   font-family: Georgia, serif;
@@ -321,19 +315,6 @@ main {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, #0001 35%, #0008);
-}
-.photo-tag {
-  position: absolute;
-  top: 25px;
-  left: 25px;
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 8px;
-  letter-spacing: 1.2px;
-  background: #fff9e8f0;
-  padding: 9px 12px;
-  border-radius: 4px;
 }
 .photo-caption {
   position: absolute;

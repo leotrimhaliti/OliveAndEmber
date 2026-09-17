@@ -8,8 +8,6 @@ import {
   Plus,
   Search,
   ShoppingBag,
-  Sparkles,
-  Star,
   UtensilsCrossed,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -37,10 +35,6 @@ export default function Menu() {
     <div className="menu-page">
       <section className="hero">
         <div className="hero-copy">
-          <span className="eyebrow">
-            <span className="live-dot" />
-            YOUR NEXT FAVORITE MEAL
-          </span>
           <h1>
             Good food.
             <br />
@@ -70,10 +64,6 @@ export default function Menu() {
             }}
           />
           <div className="photo-shade" />
-          <span className="photo-tag">
-            <Sparkles size={15} />
-            THE HOUSE FAVORITE
-          </span>
           <div className="photo-caption">
             <div>
               <span>Meet your new usual.</span>
@@ -162,11 +152,6 @@ export default function Menu() {
                     <FoodImage product={product} />
                     {!product.is_available ? (
                       <span className="food-tag sold-out">Back soon</span>
-                    ) : product.id === products[0]?.id ? (
-                      <span className="food-tag">
-                        <Star size={12} fill="currentColor" />
-                        HOUSE FAVORITE
-                      </span>
                     ) : index === 2 && !category ? (
                       <span className="food-tag">FRESHLY BAKED</span>
                     ) : null}
