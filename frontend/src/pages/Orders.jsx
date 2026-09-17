@@ -173,7 +173,10 @@ export function OrderDetails() {
     setBusy(true)
     setError(null)
     try {
-      const result = await api(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status } })
+      const result = await api(`/admin/orders/${id}/status`, {
+        method: 'PATCH',
+        body: { status, note: event.currentTarget.elements.note.value || null },
+      })
       setOrder(result.data)
       setNotice('Order status updated.')
     } catch (error) {
@@ -263,12 +266,17 @@ export function OrderDetails() {
               <label>
                 Update order status
                 <select value={status} onChange={(e) => setStatus(e.target.value)}>
-                  {statuses.map((s) => (
+                  <option value={order.status}>{statusLabel(order.status)}</option>
+                  {order.allowed_transitions.map((s) => (
                     <option key={s} value={s}>
                       {statusLabel(s)}
                     </option>
                   ))}
                 </select>
+              </label>
+              <label>
+                Internal note <small>(optional)</small>
+                <textarea name="note" maxLength={500} rows={2} />
               </label>
               <button className="button full" disabled={busy || status === order.status}>
                 {busy ? 'Saving…' : 'Save status'}
@@ -277,6 +285,25 @@ export function OrderDetails() {
           )}
         </div>
       </div>
+      {order.status_history?.length > 0 && (
+        <section className="panel status-history" aria-labelledby="status-history-title">
+          <h2 id="status-history-title">Order timeline</h2>
+          <ol>
+            {order.status_history.map((entry) => (
+              <li key={entry.id}>
+                <span className={`status ${entry.to_status}`}>
+                  {statusLabel(entry.to_status)}
+                </span>
+                <div>
+                  <strong>{entry.actor?.name || 'System'}</strong>
+                  <time dateTime={entry.created_at}>{new Date(entry.created_at).toLocaleString()}</time>
+                  {entry.note && <p>{entry.note}</p>}
+                </div>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   )
 }

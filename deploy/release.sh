@@ -21,11 +21,15 @@ require_value() {
 
 require_value APP_KEY
 require_value APP_URL
+require_value FRONTEND_URL
 require_value DB_HOST
 require_value DB_DATABASE
 require_value DB_USERNAME
 require_value DB_PASSWORD
 require_value SANCTUM_STATEFUL_DOMAINS
+require_value MAIL_MAILER
+require_value MAIL_HOST
+require_value MAIL_FROM_ADDRESS
 
 require_setting() {
     key="$1"
@@ -40,13 +44,19 @@ require_setting APP_ENV production
 require_setting APP_DEBUG false
 require_setting SESSION_SECURE_COOKIE true
 require_setting MYSQL_ATTR_SSL_VERIFY_SERVER_CERT true
+require_setting MAIL_MAILER smtp
 
 if ! grep -Eq '^APP_URL=https://' "$ENV_FILE"; then
     echo "APP_URL must use HTTPS." >&2
     exit 1
 fi
 
-if grep -Eq '^(APP_URL|DB_HOST)=.*example\.(com|internal)' "$ENV_FILE"; then
+if ! grep -Eq '^FRONTEND_URL=https://' "$ENV_FILE"; then
+    echo "FRONTEND_URL must use HTTPS." >&2
+    exit 1
+fi
+
+if grep -Eq '^(APP_URL|FRONTEND_URL|DB_HOST|MAIL_HOST|MAIL_FROM_ADDRESS)=.*example\.(com|internal)' "$ENV_FILE"; then
     echo "Replace the example production host values before releasing." >&2
     exit 1
 fi

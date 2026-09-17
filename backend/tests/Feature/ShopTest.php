@@ -3,15 +3,24 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\AdminInvitations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 class ShopTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Notification::fake();
+    }
 
     private function product(array $overrides = []): Product
     {
@@ -34,6 +43,9 @@ class ShopTest extends TestCase
     {
         $user = User::factory()->create();
         $user->role = 'admin';
+        $user->two_factor_secret = 'encrypted-test-secret';
+        $user->two_factor_recovery_codes = 'encrypted-test-recovery-codes';
+        $user->two_factor_confirmed_at = now();
         $user->save();
 
         return $user;
@@ -42,6 +54,12 @@ class ShopTest extends TestCase
     private function registration(array $overrides = []): array
     {
         return array_merge(['name' => 'Jamie', 'email' => 'new@example.com', 'password' => 'StrongPassword!', 'password_confirmation' => 'StrongPassword!'], $overrides);
+    }
+
+    private function postOrder(array $payload, ?string $key = null): TestResponse
+    {
+        return $this->withHeader('Idempotency-Key', $key ?? (string) Str::uuid())
+            ->postJson('/api/orders', $payload);
     }
 
     public function test_registration_login_and_logout_use_sessions(): void
@@ -59,16 +77,28 @@ class ShopTest extends TestCase
     public function test_admin_registration_requires_valid_invitation_and_rejects_role(): void
     {
         $this->withHeader('Origin', 'http://localhost:5173');
-        config(['shop.admin_invitation_code' => 'private-test-invitation']);
         $this->postJson('/api/register', $this->registration(['role' => 'admin']))->assertUnprocessable();
         $this->postJson('/api/register', $this->registration(['invitation_code' => 'wrong']))->assertUnprocessable();
-        $this->postJson('/api/register', $this->registration(['invitation_code' => 'private-test-invitation']))->assertCreated()->assertJsonPath('data.role', 'admin');
+        $issued = app(AdminInvitations::class)->issue(null, null, 48);
+        $this->postJson('/api/register', $this->registration(['invitation_code' => $issued['code']]))
+            ->assertCreated()->assertJsonPath('data.role', 'admin');
+        $admin = User::where('email', 'new@example.com')->firstOrFail();
+        $this->assertDatabaseHas('admin_invitations', ['id' => $issued['invitation']->id, 'used_by' => $admin->id]);
+        $this->postJson('/api/logout')->assertNoContent();
+        $this->postJson('/api/register', $this->registration([
+            'email' => 'second@example.com',
+            'invitation_code' => $issued['code'],
+        ]))->assertUnprocessable()->assertJsonValidationErrors('invitation_code');
     }
 
-    public function test_empty_config_disables_admin_registration(): void
+    public function test_expired_or_email_mismatched_admin_invitation_is_rejected(): void
     {
-        config(['shop.admin_invitation_code' => '']);
-        $this->postJson('/api/register', $this->registration(['invitation_code' => 'anything']))->assertUnprocessable();
+        $issued = app(AdminInvitations::class)->issue(null, 'invited@example.com', 1);
+        $this->postJson('/api/register', $this->registration(['invitation_code' => $issued['code']]))
+            ->assertUnprocessable()->assertJsonValidationErrors('invitation_code');
+        $issued['invitation']->update(['email' => null, 'expires_at' => now()->subMinute()]);
+        $this->postJson('/api/register', $this->registration(['invitation_code' => $issued['code']]))
+            ->assertUnprocessable()->assertJsonValidationErrors('invitation_code');
         $this->assertDatabaseCount('users', 0);
     }
 
@@ -123,7 +153,7 @@ class ShopTest extends TestCase
         $product = $this->product();
         $payload = $this->checkout($product, ['total_cents' => 1, 'status' => 'completed', 'user_id' => 99]);
         $payload['items'][0]['unit_price_cents'] = 1;
-        $response = $this->postJson('/api/orders', $payload)->assertCreated()->assertJsonPath('data.total_cents', 2598)->assertJsonPath('data.status', 'pending');
+        $response = $this->postOrder($payload)->assertCreated()->assertJsonPath('data.total_cents', 2598)->assertJsonPath('data.status', 'pending');
         $product->update(['name' => 'Changed', 'price_cents' => 9999]);
         $product->delete();
         $this->getJson('/api/orders/'.$response->json('data.id'))->assertOk()
@@ -133,7 +163,7 @@ class ShopTest extends TestCase
     public function test_customers_only_see_their_own_orders(): void
     {
         $this->actingAs(User::factory()->create());
-        $id = $this->postJson('/api/orders', $this->checkout($this->product()))->json('data.id');
+        $id = $this->postOrder($this->checkout($this->product()))->json('data.id');
         $this->actingAs(User::factory()->create());
         $this->getJson("/api/orders/$id")->assertNotFound();
         $this->getJson('/api/orders')->assertOk()->assertJsonCount(0, 'data');
@@ -145,11 +175,11 @@ class ShopTest extends TestCase
         $this->actingAs(User::factory()->create());
         $product = $this->product();
         foreach ([0, -1, 21, 1.5, 'abc'] as $quantity) {
-            $this->postJson('/api/orders', $this->checkout($product, ['items' => [['product_id' => $product->id, 'quantity' => $quantity]]]))->assertUnprocessable();
+            $this->postOrder($this->checkout($product, ['items' => [['product_id' => $product->id, 'quantity' => $quantity]]]))->assertUnprocessable();
         }
-        $this->postJson('/api/orders', $this->checkout($product, ['items' => []]))->assertUnprocessable();
+        $this->postOrder($this->checkout($product, ['items' => []]))->assertUnprocessable();
         $item = ['product_id' => $product->id, 'quantity' => 1];
-        $this->postJson('/api/orders', $this->checkout($product, ['items' => [$item, $item]]))->assertUnprocessable();
+        $this->postOrder($this->checkout($product, ['items' => [$item, $item]]))->assertUnprocessable();
         $this->assertDatabaseCount('orders', 0);
     }
 
@@ -159,7 +189,7 @@ class ShopTest extends TestCase
         $good = $this->product();
         $bad = $this->product(['is_available' => false]);
         foreach ([$bad->id, 9999] as $id) {
-            $this->postJson('/api/orders', $this->checkout($good, ['items' => [
+            $this->postOrder($this->checkout($good, ['items' => [
                 ['product_id' => $good->id, 'quantity' => 1], ['product_id' => $id, 'quantity' => 1],
             ]]))->assertUnprocessable();
         }
@@ -167,16 +197,41 @@ class ShopTest extends TestCase
         $this->assertDatabaseCount('order_items', 0);
     }
 
-    public function test_admin_can_view_orders_and_update_all_supported_statuses(): void
+    public function test_admin_order_transitions_are_enforced_and_audited(): void
     {
-        $this->actingAs(User::factory()->create());
-        $id = $this->postJson('/api/orders', $this->checkout($this->product()))->json('data.id');
-        $this->actingAs($this->admin());
+        $customer = User::factory()->create();
+        $this->actingAs($customer);
+        $id = $this->postOrder($this->checkout($this->product()))->json('data.id');
+        $admin = $this->admin();
+        $this->actingAs($admin);
         $this->getJson('/api/admin/orders')->assertOk()->assertJsonCount(1, 'data');
         $this->getJson("/api/orders/$id")->assertOk();
-        foreach (Order::STATUSES as $status) {
-            $this->patchJson("/api/admin/orders/$id/status", ['status' => $status])->assertOk()->assertJsonPath('data.status', $status);
-        }
+        $this->patchJson("/api/admin/orders/$id/status", ['status' => 'completed'])->assertUnprocessable();
+        $this->patchJson("/api/admin/orders/$id/status", ['status' => 'preparing', 'note' => 'Started by Alex'])
+            ->assertOk()
+            ->assertJsonPath('data.status', 'preparing')
+            ->assertJsonPath('data.status_history.1.note', 'Started by Alex')
+            ->assertJsonMissingPath('data.status_history.1.actor.email');
+        $this->patchJson("/api/admin/orders/$id/status", ['status' => 'out_for_delivery'])->assertOk();
+        $this->patchJson("/api/admin/orders/$id/status", ['status' => 'completed'])->assertOk();
+        $this->patchJson("/api/admin/orders/$id/status", ['status' => 'cancelled'])->assertUnprocessable();
         $this->patchJson("/api/admin/orders/$id/status", ['status' => 'invalid'])->assertUnprocessable();
+        $this->assertDatabaseCount('order_status_histories', 4);
+        $this->assertDatabaseHas('order_status_histories', ['order_id' => $id, 'changed_by' => $customer->id, 'to_status' => 'pending']);
+        $this->assertDatabaseHas('order_status_histories', ['order_id' => $id, 'changed_by' => $admin->id, 'to_status' => 'completed']);
+    }
+
+    public function test_checkout_idempotency_replays_the_same_order_and_rejects_key_reuse(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $payload = $this->checkout($this->product());
+        $key = (string) Str::uuid();
+        $first = $this->postOrder($payload, $key)->assertCreated()->assertHeader('Idempotent-Replayed', 'false');
+        $this->postOrder($payload, $key)->assertOk()
+            ->assertHeader('Idempotent-Replayed', 'true')
+            ->assertJsonPath('data.id', $first->json('data.id'));
+        $this->postOrder(array_merge($payload, ['address' => 'A different address']), $key)->assertConflict();
+        $this->assertDatabaseCount('orders', 1);
+        $this->assertDatabaseCount('order_items', 1);
     }
 }

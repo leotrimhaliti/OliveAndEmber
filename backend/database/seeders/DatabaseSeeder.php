@@ -6,7 +6,7 @@ use App\Models\Category;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
-use App\Services\CreateOrder;
+use App\Services\OrderWorkflow;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             $user = User::firstOrNew(['email' => "$role@example.com"]);
             $user->fill(['name' => $name, 'password' => 'DemoFood2026!']);
             $user->role = $role;
+            $user->email_verified_at = now();
             $user->save();
         }
         $menu = [
@@ -48,13 +49,17 @@ class DatabaseSeeder extends Seeder
             ]);
         }
         $customer = User::where('email', 'customer@example.com')->firstOrFail();
+        $admin = User::where('email', 'admin@example.com')->firstOrFail();
         if (! Order::where('user_id', $customer->id)->exists()) {
-            $order = app(CreateOrder::class)->handle($customer, [
+            $workflow = app(OrderWorkflow::class);
+            $order = $workflow->placeOrder($customer, [
                 'customer_name' => $customer->name, 'phone' => '+1 202 555 0148',
                 'address' => '42 Garden Street, Apartment 3, Springfield', 'notes' => 'Please ring the doorbell.',
                 'items' => [['product_id' => Product::first()->id, 'quantity' => 2]],
-            ]);
-            $order->update(['status' => 'completed']);
+            ], 'demo-seed-order')->order;
+            foreach (['preparing', 'out_for_delivery', 'completed'] as $status) {
+                $order = $workflow->transitionOrder($order, $status, $admin, 'Demo order progression');
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, Bike, ShieldCheck, Trash2 } from 'lucide-react'
 import { useShop } from '../context'
@@ -19,6 +19,7 @@ export default function Cart({ checkout = false }) {
   } = useShop()
   const [error, setError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const idempotencyKey = useRef(crypto.randomUUID())
   const navigate = useNavigate()
   if (loading) return <Loading />
   if (catalogError) return <ErrorBox error={catalogError} retry={reloadCatalog} />
@@ -46,6 +47,7 @@ export default function Cart({ checkout = false }) {
     try {
       const result = await api('/orders', {
         method: 'POST',
+        headers: { 'Idempotency-Key': idempotencyKey.current },
         body: { ...Object.fromEntries(new FormData(event.currentTarget)), items: cart },
       })
       setCart([])

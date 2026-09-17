@@ -60,6 +60,7 @@ Edit `.env` before migrating if using an existing database. `.env.example` defau
 
 ```dotenv
 APP_URL=http://127.0.0.1:8000
+FRONTEND_URL=http://127.0.0.1:5173
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3307
@@ -68,10 +69,9 @@ DB_USERNAME=food_app
 DB_PASSWORD=local-food-password
 SESSION_DRIVER=database
 SANCTUM_STATEFUL_DOMAINS=localhost:5173,127.0.0.1:5173,localhost:8000,127.0.0.1:8000
-ADMIN_INVITATION_CODE=
 ```
 
-Leave `ADMIN_INVITATION_CODE` blank to disable invited admin registration. To demonstrate it, generate a random value with `php -r "echo bin2hex(random_bytes(24)), PHP_EOL;"`, place it in `.env`, and privately give that value to the registrant. Then run `php artisan config:clear`. On the registration page, open **Joining the kitchen team?** and enter the code. Public registration never accepts a `role` field. A wrong invitation fails validation instead of silently creating an account. For simplicity the invitation is reusable until rotated; it is not a one-time invitation system.
+Create the first administrator invitation from the backend with `php artisan admin:invite admin@example.com`. The command prints a one-time code that expires after 48 hours by default; change that with `--expires=24`. Once an administrator has verified their email and enabled two-factor authentication, they can issue and revoke further invitations from **Account security**. Only a hash is stored, every code can be claimed once, and an optional email restriction prevents forwarding it to another address.
 
 ### 3. Install the frontend
 
@@ -137,7 +137,7 @@ npm test
 npm run build
 ```
 
-The default feature suite uses a separate in-memory SQLite database; it never refreshes the development database. Coverage includes registration/login/logout, invitation safety, guest/customer admin restrictions, category filtering, product validation and management, ownership isolation, server-calculated totals, historical snapshots, invalid quantities, duplicates, unavailable/missing products, and all five statuses. Frontend tests cover safe cart restoration and quantity changes.
+The default feature suite uses a separate in-memory SQLite database; it never refreshes the development database. Coverage includes authentication, email verification, password reset privacy, two-factor setup/challenge/recovery, one-time invitations, throttled authorization boundaries, product management, ownership isolation, idempotent checkout, server-calculated totals, valid order transitions, and status audit history. Frontend tests cover safe cart restoration and quantity changes.
 
 To run the feature suite against MySQL, first create a **separate disposable test database**, such as `food_ordering_test`, and grant the test user access. Tests recreate its tables. Then, from `backend/` in PowerShell:
 
@@ -165,19 +165,27 @@ All API endpoints return JSON. Single-resource and collection successes use `{ "
 | GET | `/sanctum/csrf-cookie` | Establish CSRF cookie before mutations |
 | POST | `/api/register` | Customer registration, or admin with valid `invitation_code` |
 | POST | `/api/login` | Session login (rate-limited) |
+| POST | `/api/forgot-password` | Send a reset link without revealing account existence |
+| POST | `/api/reset-password` | Reset a password using an emailed token |
+| POST | `/api/two-factor-challenge` | Complete login with an authenticator or recovery code |
 | POST | `/api/logout` | Authenticated session logout |
 | GET | `/api/user` | Current authenticated user |
+| POST | `/api/email/verification-notification` | Resend an email verification link |
+| GET | `/api/email/verify/{id}/{hash}` | Verify a signed email link |
 | GET | `/api/categories` | Public categories |
 | GET | `/api/products?category_id=1` | Public products, optional category filter |
 | GET | `/api/orders?page=1` | Current user's orders, 15 per page |
-| POST | `/api/orders` | Create an authenticated order |
+| POST | `/api/orders` | Create a verified user's order; requires an `Idempotency-Key` UUID header |
 | GET | `/api/orders/{id}` | Owner or administrator |
 | GET | `/api/admin/products` | Administrator catalog |
 | POST | `/api/admin/products` | Administrator product creation |
 | PUT | `/api/admin/products/{id}` | Administrator full product update |
 | DELETE | `/api/admin/products/{id}` | Administrator soft deletion |
 | GET | `/api/admin/orders?status=pending&page=1` | Administrator order list |
-| PATCH | `/api/admin/orders/{id}/status` | Administrator status update |
+| PATCH | `/api/admin/orders/{id}/status` | Valid administrator status transition with optional audit note |
+| GET | `/api/admin/invitations` | List administrator invitations |
+| POST | `/api/admin/invitations` | Issue a one-time administrator invitation |
+| DELETE | `/api/admin/invitations/{id}` | Revoke an unused invitation |
 
 Registration: `name`, `email`, `password`, `password_confirmation`, optional `invitation_code`. Product writes: `name`, `description`, `category_id`, `price_cents`, `image_url`, `is_available`. Prices must be 1–100,000 cents; image URLs must use HTTP(S).
 
@@ -193,7 +201,7 @@ Example checkout body (IDs must exist):
 }
 ```
 
-Only IDs and quantities are accepted for pricing. Any client-supplied totals, item prices, user ID, or initial status are ignored. Status values are `pending`, `preparing`, `out_for_delivery`, `completed`, and `cancelled`.
+Only IDs and quantities are accepted for pricing. Any client-supplied totals, item prices, user ID, or initial status are ignored. Repeating the same request with the same idempotency key returns the original order; reusing that key with different details returns 409. The transition graph is `pending → preparing → out_for_delivery → completed`, with cancellation permitted from pending or preparing. Each change records the actor, time, prior status, new status, and optional note.
 
 ## Structure and decisions
 
@@ -202,7 +210,7 @@ backend/app/Http/Controllers/  Thin REST controllers
 backend/app/Http/Requests/     Product and checkout validation
 backend/app/Http/Middleware/   Administrator authorization
 backend/app/Models/            Eloquent models and relationships
-backend/app/Services/          One focused transactional CreateOrder service
+backend/app/Services/          Order workflow and one-time invitation services
 backend/database/             Schema, factories, and demo seeder
 backend/tests/Feature/         HTTP feature tests
 frontend/src/pages/           Menu, auth, cart/checkout, orders, admin products
@@ -216,19 +224,23 @@ Database relationships:
 ```mermaid
 erDiagram
     USERS ||--o{ ORDERS : places
+    USERS ||--o{ ADMIN_INVITATIONS : creates
     CATEGORIES ||--o{ PRODUCTS : groups
     ORDERS ||--|{ ORDER_ITEMS : contains
+    ORDERS ||--o{ ORDER_STATUS_HISTORIES : records
     PRODUCTS ||--o{ ORDER_ITEMS : references
 ```
 
-- **Users:** standard Laravel fields plus a server-assigned `role` (customer/admin).
+- **Users:** standard Laravel fields plus a server-assigned `role`, verified-email timestamp, and encrypted authenticator setup managed by Fortify.
 - **Categories:** unique name. Six seeded categories are sufficient for the brief.
 - **Products:** category, name, description, integer `price_cents`, image URL, availability, soft-deletion timestamp.
 - **Orders:** user, delivery contact/address/notes, status, integer total, timestamps.
 - **Order items:** product reference, immutable purchased name, integer unit price, quantity.
 - **Sanctum sessions:** appropriate for a first-party SPA. The session cookie is HttpOnly; JavaScript reads only the CSRF cookie. There are no access tokens in local storage. Login rotates the session; logout invalidates it. The Vite proxy keeps browser requests on one origin. Backend checks remain authoritative even if a customer manually visits an admin URL.
 - **Money:** integer USD cents throughout storage, validation, and arithmetic. React formats cents for display and parses admin decimal inputs as strings. Maximum 50 distinct products and 20 units per product keep totals bounded.
-- **Checkout:** a database transaction loads and locks product rows in stable ID order, validates availability, calculates current database prices, and writes the order and snapshots atomically. Deadlocks are retried up to three times. Product edits/deactivation cannot change a price halfway through checkout.
+- **Checkout:** a database transaction serializes a user's idempotency keys, loads and locks product rows in stable ID order, validates availability, calculates current database prices, and writes the order, snapshots, and initial audit event atomically. Deadlocks are retried up to three times.
+- **Order workflow:** the service enforces forward-only fulfillment transitions and records every effective status change with its actor and note.
+- **Account security:** new accounts verify email before ordering. Password-reset responses do not disclose whether an address exists. Administrators must also enable authenticator-based two-factor authentication before using management routes.
 - **History:** purchased names/prices are snapshots; products are soft-deleted so references remain valid. A customer never queries another user's order list, and individual foreign orders return 404.
 - **Cart:** version-small local storage containing only IDs/quantities, validated on restoration. Unavailable/deleted items can be removed. It is local to the browser and survives logout; it stores no address, password, or token. If storage is blocked, the in-memory cart still works for that session.
 - **Frontend:** React Context and Fetch are sufficient; no global state library or generated API framework. Category and search filtering happen locally for this deliberately small catalog; the API also supports category filtering. Order lists are paginated.
@@ -236,9 +248,9 @@ erDiagram
 
 ## Assumptions and limitations
 
-One restaurant, USD, tax-inclusive displayed prices, free delivery, payment on delivery, and illustrative delivery estimates. No payment processing, maps, live tracking, inventory quantities, email verification/password reset, or category CRUD. Admins may set any of the five valid statuses to correct mistakes; there is no enforced transition graph. Status refresh is manual.
+One restaurant, USD, tax-inclusive displayed prices, free delivery, payment on delivery, and illustrative delivery estimates. There is no payment processing, maps, live tracking, inventory quantity tracking, or category CRUD. Status refresh is manual.
 
-The invite code is a shared, reusable server secret and should be rotated after onboarding. The public catalog is unpaginated. There is no checkout idempotency key: buttons prevent normal double-click submissions, but ambiguous network failures need checking order history before retrying. Prices can change while a cart is open; the server always uses current database prices. Multiple browser tabs do not synchronize carts. The repository contains production deployment configuration, but no cloud environment is provisioned from this repository. Email delivery, load testing, and a comprehensive accessibility audit have not been performed. External images/fonts require internet access.
+The public catalog is unpaginated. Prices can change while a cart is open; the server always uses current database prices. Multiple browser tabs do not synchronize carts. The repository contains production deployment configuration, but no cloud environment is provisioned from this repository. A working SMTP provider is required for verification and reset links; provider-specific delivery has not been exercised. Load testing and a comprehensive accessibility audit have not been performed. External images/fonts require internet access.
 
 ## Five-day implementation/review plan
 

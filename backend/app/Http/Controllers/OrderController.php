@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreOrderRequest;
 use App\Models\Order;
-use App\Services\CreateOrder;
+use App\Services\OrderWorkflow;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -17,14 +17,23 @@ class OrderController extends Controller
 
     public function show(Request $request, Order $order)
     {
-        abort_unless($order->user_id === $request->user()->id || $request->user()->role === 'admin', 404);
+        $user = $request->user();
+        $isSecuredAdmin = $user->role === 'admin'
+            && $user->hasVerifiedEmail()
+            && $user->two_factor_enabled;
+        abort_unless($order->user_id === $user->id || $isSecuredAdmin, 404);
 
-        return response()->json(['data' => $order->load('items')]);
+        return response()->json(['data' => $order->load('items', 'statusHistory.actor:id,name')]);
     }
 
-    public function store(StoreOrderRequest $request, CreateOrder $createOrder)
+    public function store(StoreOrderRequest $request, OrderWorkflow $workflow)
     {
-        return response()->json(['data' => $createOrder->handle($request->user(), $request->validated())], 201);
+        $data = $request->validated();
+        $placement = $workflow->placeOrder($request->user(), $data, $data['idempotency_key']);
+
+        return response()
+            ->json(['data' => $placement->order], $placement->replayed ? 200 : 201)
+            ->header('Idempotent-Replayed', $placement->replayed ? 'true' : 'false');
     }
 
     public function adminIndex(Request $request)
@@ -36,12 +45,15 @@ class OrderController extends Controller
             ->latest('id')->paginate(15);
     }
 
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order, OrderWorkflow $workflow)
     {
-        $data = $request->validate(['status' => ['required', Rule::in(Order::STATUSES)]]);
-        // Administrators may correct a previous status; this is deliberately not a state machine.
-        $order->update($data);
+        $data = $request->validate([
+            'status' => ['required', Rule::in(Order::STATUSES)],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
 
-        return response()->json(['data' => $order->load('items')]);
+        return response()->json([
+            'data' => $workflow->transitionOrder($order, $data['status'], $request->user(), $data['note'] ?? null),
+        ]);
     }
 }

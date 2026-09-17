@@ -22,8 +22,13 @@ export default function Auth({ register = false }) {
         method: 'POST',
         body: Object.fromEntries(new FormData(event.currentTarget)),
       })
-      setUser(result.data)
-      navigate(from, { replace: true })
+      if (result?.two_factor) {
+        navigate('/two-factor-challenge', { replace: true, state: { from } })
+        return
+      }
+      const session = register ? result : await api('/user')
+      setUser(session.data)
+      navigate(session.data.email_verified_at ? from : '/account/security', { replace: true })
     } catch (error) {
       setError(error)
     } finally {
@@ -94,6 +99,11 @@ export default function Auth({ register = false }) {
           {busy ? 'One moment…' : register ? 'Create account' : 'Sign in'}
           <ArrowRight size={17} />
         </button>
+        {!register && (
+          <Link className="forgot-link" to="/forgot-password">
+            Forgot your password?
+          </Link>
+        )}
         <div className="form-footer">
           {register ? 'Already part of the table?' : 'New around here?'}{' '}
           <Link state={{ from }} to={register ? '/login' : '/register'}>

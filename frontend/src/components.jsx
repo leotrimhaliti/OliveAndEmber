@@ -74,14 +74,18 @@ export function Empty({ title, text, link = '/', action = 'Explore the menu' }) 
     </div>
   )
 }
-export function Protected({ children, admin = false }) {
+export function Protected({ children, admin = false, verified = false }) {
   const { user, authLoading, authError } = useShop()
   const location = useLocation()
   if (authLoading) return <Loading />
   if (authError) return <ErrorBox error={authError} retry={() => window.location.reload()} />
   if (!user) return <Navigate to="/login" state={{ from: location.pathname }} replace />
+  if ((verified || admin) && !user.email_verified_at)
+    return <Navigate to="/account/security" replace />
   if (admin && user.role !== 'admin')
     return <Empty title="This is the kitchen’s space" text="Administrator access is required." />
+  if (admin && !user.two_factor_enabled)
+    return <Navigate to="/account/security" replace />
   return children
 }
 export function Quantity({ name, quantity, onChange }) {

@@ -1,8 +1,8 @@
 # Submission description
 
-Olive & Ember is a food ordering application built with Laravel, React, and a MySQL-targeted relational schema. Customers can register, browse food by category, maintain a persistent cart, place delivery orders, and view their personal order history. An invitation-protected administrator account manages products, availability, category assignments, and order statuses.
+Olive & Ember is a food ordering application built with Laravel, React, and a MySQL-targeted relational schema. Customers can register, browse food by category, maintain a persistent cart, place delivery orders, and view their personal order history. One-time invitations protect administrator onboarding. Verified administrators use authenticator-based two-factor login and manage products, availability, category assignments, invitations, and audited order transitions.
 
-The implementation uses Sanctum session authentication, backend role and ownership checks, validated requests, and consistent JSON errors. Checkout calculates integer-cent totals from database prices inside a transaction and stores purchased names and prices as historical snapshots. The responsive interface includes loading, empty, validation, and error states. Migrations, demo data, focused automated tests, setup instructions, and an AI assistance record are included.
+The implementation uses Sanctum session authentication, email verification, password reset, two-factor authentication, backend role and ownership checks, validated requests, and consistent JSON errors. Idempotent checkout calculates integer-cent totals from database prices inside a transaction and stores purchased names and prices as historical snapshots. The responsive interface includes loading, empty, validation, and error states. Migrations, demo data, focused automated tests, setup instructions, and an AI assistance record are included.
 
 The scope is deliberately small: one restaurant, payment on delivery, and manual order-status refresh. This keeps the code understandable and leaves time to verify the important business rules. See VERIFICATION.md for the exact evidence and remaining checks.
 

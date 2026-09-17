@@ -39,13 +39,14 @@ Put the generated value in `APP_KEY`, then replace every example host and databa
 The values that require special care are:
 
 - `APP_URL`: the public HTTPS origin, with no path.
+- `FRONTEND_URL`: the public HTTPS SPA origin used in password reset links. It normally matches `APP_URL`.
 - `APP_KEY`: a unique generated key per environment. Back it up securely; changing it invalidates encrypted cookies and data.
 - `DB_*`: the least-privilege managed MySQL connection. Never reuse the local demo password.
 - `SANCTUM_STATEFUL_DOMAINS`: the public hostname, without a URL scheme.
 - `SESSION_DOMAIN`: leave blank for a host-only cookie unless subdomains must share the session.
-- `ADMIN_INVITATION_CODE`: leave blank to disable administrator registration, or use a random value and rotate it after onboarding.
+- `MAIL_*`: a production SMTP account and sender identity. Verification and password-reset flows depend on working outbound email.
 
-The example enables secure, HTTP-only, encrypted, same-site session cookies; disables debug output; sends logs to stderr; verifies database TLS; and uses database-backed cache and sessions so containers remain disposable.
+The example enables secure, HTTP-only, encrypted, same-site session cookies; disables debug output; sends logs to stderr; verifies database TLS; and uses database-backed cache and sessions so containers remain disposable. Nginx adds CSP, HSTS, frame denial, cross-origin opener isolation, MIME sniffing protection, a strict referrer policy, and a restricted permissions policy.
 
 ## Release
 
@@ -58,7 +59,7 @@ chmod +x deploy/release.sh deploy/app-entrypoint.sh
 
 The script validates required settings, rejects the example hosts, tags images with the current Git commit, validates Compose, builds both images, applies migrations once with `--force`, starts the release, and waits for database-backed readiness. Set `HEALTHCHECK_URL` when the probe must use the public staging URL. Set `APP_PORT` when port 8080 is unavailable.
 
-The CI workflow builds both production images and validates the shell and Nginx configuration on every push and pull request. Promote the exact tested commit from staging to production. After release, smoke-test registration/login, catalog loading, checkout, order ownership, administrator product changes, and status updates.
+The CI workflow builds both production images and validates the shell and Nginx configuration on every push and pull request. Promote the exact tested commit from staging to production. After release, smoke-test email verification, password reset, two-factor login, one-time admin invitations, idempotent checkout, order ownership, administrator product changes, and audited status transitions.
 
 ## Migration and rollback policy
 

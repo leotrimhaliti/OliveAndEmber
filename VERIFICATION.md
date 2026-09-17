@@ -6,8 +6,8 @@ Performed during implementation on 2026-09-17 in the Windows workspace. This is 
 
 | Check | Result |
 | --- | --- |
-| Laravel feature/unit suite, SQLite in memory | 14 tests passed, 90 assertions |
-| Same suite, isolated `food_ordering_test` database on MariaDB 10.4.32 using the MySQL driver | 14 tests passed, 90 assertions |
+| Laravel feature/unit suite, SQLite in memory | 20 tests passed, 152 assertions |
+| Same suite, isolated `food_ordering_test` database on MariaDB 10.4.32 using the MySQL driver | 20 tests passed, 152 assertions |
 | Laravel Pint | Passed |
 | Node cart unit tests | 2 tests passed |
 | React/Vite production build | Passed |
@@ -17,7 +17,7 @@ Performed during implementation on 2026-09-17 in the Windows workspace. This is 
 | Pre-push staged secret and ignored-file scan | Passed; no live credential or ignored runtime file was committed |
 | GitHub Actions on commit `e1298f3` | Backend, frontend, production app image, production web image, and Nginx validation passed |
 
-The suite contains 12 application feature tests and two Laravel scaffold smoke tests. Fast tests disable CSRF as Laravel normally does; the live browser checks below exercised actual session cookies and CSRF-protected mutations.
+The suite contains 18 application feature tests and two Laravel scaffold smoke tests. Fast tests disable CSRF as Laravel normally does; the live browser checks below exercised actual session cookies and CSRF-protected mutations.
 
 ## Live browser checks actually performed
 
@@ -32,6 +32,7 @@ The suite contains 12 application feature tests and two Laravel scaffold smoke t
 - Opened product management, opened the cheesecake edit form, and successfully saved it.
 - Opened the administrator order list and the new order details.
 - Updated the order status to preparing and confirmed the saved status in the UI.
+- Submitted the password-recovery form with a non-existent test address and confirmed the same neutral success state used for known accounts.
 - Inspected the desktop menu and mobile menu/order details at a 390×844 viewport. The mobile menu document width and scroll width were equal (375 CSS pixels excluding the scrollbar), with no page-level horizontal overflow. Category navigation intentionally scrolls horizontally.
 
 These actions created one extra local demo order in addition to the seed order. No real restaurant, payment, or delivery service is connected.
@@ -47,12 +48,13 @@ These actions created one extra local demo order in addition to the seed order. 
 ## Practical manual regression checklist
 
 1. Register a customer with a fresh email; verify login/logout and validation errors.
-2. Attempt an invalid invitation, then register an administrator using the code configured privately in `.env`.
+2. Attempt an invalid invitation, then claim a one-time email-restricted administrator invitation.
 3. Browse each category, use search, and confirm an unavailable product cannot be added.
 4. Add two products, change quantities, remove one, refresh, and check the total.
 5. Complete checkout and compare the order items and total with the current catalog.
 6. Log in as another customer and verify their history does not include the first customer's order.
 7. As admin, add/edit/deactivate/delete a disposable product and assign a category.
-8. Update an order through all five supported statuses; check the customer's refreshed view.
-9. Edit a purchased product's name/price and verify the previous order keeps its original values.
-10. Check empty carts/order histories, search with no results, a stopped API, and narrow-screen layouts.
+8. Progress an order through the valid transition path, attempt an invalid jump, and inspect its audit timeline.
+9. Verify email, reset a password, enable admin 2FA, and complete login with both an authenticator code and a recovery code.
+10. Edit a purchased product's name/price and verify the previous order keeps its original values.
+11. Check empty carts/order histories, search with no results, a stopped API, and narrow-screen layouts.
