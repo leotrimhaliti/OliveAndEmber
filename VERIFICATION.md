@@ -15,7 +15,7 @@ Performed during implementation on 2026-09-17 in the Windows workspace. This is 
 | npm install audit | No vulnerabilities reported |
 | Development migrations and seeding | Passed on local MariaDB |
 | Pre-push staged secret and ignored-file scan | Passed; no live credential or ignored runtime file was committed |
-| GitHub Actions on commit `e1298f3` | Backend, frontend, production app image, production web image, and Nginx validation passed |
+| GitHub Actions on Phase 2 commit `931a46d` | Backend, frontend, production app image, production web image, and Nginx validation passed |
 
 The suite contains 18 application feature tests and two Laravel scaffold smoke tests. Fast tests disable CSRF as Laravel normally does; the live browser checks below exercised actual session cookies and CSRF-protected mutations.
 
