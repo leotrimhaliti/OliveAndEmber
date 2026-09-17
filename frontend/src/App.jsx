@@ -10,6 +10,7 @@ import { Orders, OrderDetails } from './pages/Orders'
 import AdminProducts from './pages/AdminProducts'
 import AccountSecurity from './pages/AccountSecurity'
 import { ForgotPassword, ResetPassword, TwoFactorChallenge } from './pages/AccountAccess'
+import RouteMetadata from './components/RouteMetadata'
 
 export default function App() {
   const { user, setUser, cart, setNotice } = useShop()
@@ -26,6 +27,7 @@ export default function App() {
   }
   return (
     <>
+      <RouteMetadata />
       <div className="announcement">
         <Leaf size={13} />
         <span>A little fresh. A little fire. A whole lot of flavor.</span>

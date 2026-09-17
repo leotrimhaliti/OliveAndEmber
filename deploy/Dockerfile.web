@@ -4,6 +4,10 @@ WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+ARG PUBLIC_URL=http://127.0.0.1:5173
+ARG INDEXING_ENABLED=false
+ENV VITE_PUBLIC_URL=$PUBLIC_URL
+ENV VITE_INDEXING_ENABLED=$INDEXING_ENABLED
 RUN npm run build
 
 FROM nginx:1.27-alpine

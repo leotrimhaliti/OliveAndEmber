@@ -22,6 +22,7 @@ require_value() {
 require_value APP_KEY
 require_value APP_URL
 require_value FRONTEND_URL
+require_value SEO_INDEXING_ENABLED
 require_value DB_HOST
 require_value DB_DATABASE
 require_value DB_USERNAME
@@ -45,6 +46,11 @@ require_setting APP_DEBUG false
 require_setting SESSION_SECURE_COOKIE true
 require_setting MYSQL_ATTR_SSL_VERIFY_SERVER_CERT true
 require_setting MAIL_MAILER smtp
+
+if ! grep -Eq '^SEO_INDEXING_ENABLED=(true|false)$' "$ENV_FILE"; then
+    echo "SEO_INDEXING_ENABLED must be true or false." >&2
+    exit 1
+fi
 
 if ! grep -Eq '^APP_URL=https://' "$ENV_FILE"; then
     echo "APP_URL must use HTTPS." >&2

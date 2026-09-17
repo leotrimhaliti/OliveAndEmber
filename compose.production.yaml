@@ -25,6 +25,9 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.web
+      args:
+        PUBLIC_URL: ${FRONTEND_URL}
+        INDEXING_ENABLED: ${SEO_INDEXING_ENABLED:-false}
     depends_on:
       app:
         condition: service_healthy

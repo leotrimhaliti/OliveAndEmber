@@ -165,6 +165,8 @@ Process environment values override the defaults in `phpunit.xml`. Never point t
 
 See [VERIFICATION.md](VERIFICATION.md) for checks actually performed and remaining checks. `npm run build` generates `frontend/dist`; a Vite preview alone does not provide the API proxy. For deployment, serve the React build and proxy `/api` and `/sanctum` to Laravel under one HTTPS origin, with SPA fallback for client routes. Hosting is outside this submission.
 
+Frontend builds default to search indexing disabled. Copy `frontend/.env.example` for local overrides. Production Compose uses `FRONTEND_URL` as the canonical site origin and enables indexing only when `SEO_INDEXING_ENABLED=true`; see [DEPLOYMENT.md](DEPLOYMENT.md) for the release checklist.
+
 ## API overview
 
 All API endpoints return JSON. Single-resource and collection successes use `{ "data": ... }`; order lists also include Laravel pagination metadata. Errors consistently use `{ "message": "...", "errors": { ... } }`. Validation errors return 422, unauthenticated 401, forbidden 403, missing/non-owned orders 404, and throttled requests 429. Internal errors return a generic message and are logged by Laravel.

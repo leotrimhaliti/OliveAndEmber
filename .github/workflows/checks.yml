@@ -52,6 +52,13 @@ jobs:
       - run: npm audit --omit=dev
       - run: npm test
       - run: npm run build
+        env:
+          VITE_PUBLIC_URL: https://order.example.test
+          VITE_INDEXING_ENABLED: 'true'
+      - run: npm run check:seo
+        env:
+          VITE_PUBLIC_URL: https://order.example.test
+          VITE_INDEXING_ENABLED: 'true'
   deployment:
     runs-on: ubuntu-latest
     steps:

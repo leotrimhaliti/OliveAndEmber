@@ -40,6 +40,7 @@ The values that require special care are:
 
 - `APP_URL`: the public HTTPS origin, with no path.
 - `FRONTEND_URL`: the public HTTPS SPA origin used in password reset links. It normally matches `APP_URL`.
+- `SEO_INDEXING_ENABLED`: keep this `false` on local, preview, and staging deployments. Set it to `true` only for the public production domain; it controls the homepage robots directive and generated `robots.txt`.
 - `APP_KEY`: a unique generated key per environment. Back it up securely; changing it invalidates encrypted cookies and data.
 - `DB_*`: the least-privilege managed MySQL connection. Never reuse the local demo password.
 - `SANCTUM_STATEFUL_DOMAINS`: the public hostname, without a URL scheme.
@@ -60,6 +61,8 @@ chmod +x deploy/release.sh deploy/app-entrypoint.sh
 The script validates required settings, rejects the example hosts, tags images with the current Git commit, validates Compose, builds both images, applies migrations once with `--force`, starts the release, and waits for database-backed readiness. Set `HEALTHCHECK_URL` when the probe must use the public staging URL. Set `APP_PORT` when port 8080 is unavailable.
 
 The CI workflow builds both production images and validates the shell and Nginx configuration on every push and pull request. Promote the exact tested commit from staging to production. After release, smoke-test email verification, password reset, two-factor login, one-time admin invitations, idempotent checkout, order ownership, administrator product changes, and audited status transitions.
+
+For the public production release, confirm that `FRONTEND_URL` is the final canonical HTTPS origin and set `SEO_INDEXING_ENABLED=true` before building. The frontend image bakes that origin into the canonical link, Open Graph metadata, JSON-LD, `robots.txt`, and `sitemap.xml`. After deployment, check `/robots.txt` and `/sitemap.xml`, submit the sitemap in Google Search Console, and test the homepage with Google's Rich Results Test. Authentication, cart, checkout, order, account, and admin routes send an `X-Robots-Tag: noindex, nofollow` response header.
 
 ## Migration and rollback policy
 
