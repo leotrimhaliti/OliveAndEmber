@@ -15,6 +15,7 @@ Performed during implementation on 2026-09-17 in the Windows workspace. This is 
 | npm install audit | No vulnerabilities reported |
 | Development migrations and seeding | Passed on local MariaDB |
 | Pre-push staged secret and ignored-file scan | Passed; no live credential or ignored runtime file was committed |
+| GitHub Actions on commit `e1298f3` | Backend, frontend, production app image, production web image, and Nginx validation passed |
 
 The suite contains 12 application feature tests and two Laravel scaffold smoke tests. Fast tests disable CSRF as Laravel normally does; the live browser checks below exercised actual session cookies and CSRF-protected mutations.
 
@@ -38,7 +39,6 @@ These actions created one extra local demo order in addition to the seed order. 
 ## Checks still to perform
 
 - Run the documented installation on a clean clone with **MySQL 8.4**. Docker was not installed on the implementation machine, so the development and production Compose definitions are validated by CI rather than claimed as locally executed.
-- Confirm the published GitHub Actions run passes all backend, frontend, and production-image jobs.
 - Provision an actual staging host, HTTPS domain, and managed MySQL account using [DEPLOYMENT.md](DEPLOYMENT.md); these require the owner's provider account and credentials.
 - Perform a full keyboard/screen-reader audit if accessibility is part of the employer's rubric. Labels, focus styles, semantic controls, live feedback, and native modal dialogs are present, but this is not a formal audit.
 - Test other target browsers and real mobile devices. Responsive browser inspection is not equivalent to device testing.
