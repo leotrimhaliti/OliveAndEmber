@@ -212,15 +212,16 @@ function InvitationManager({ setNotice }) {
 
   async function create(event) {
     event.preventDefault()
+    const form = event.currentTarget
     setBusy(true)
     setError(null)
     try {
       const response = await api('/admin/invitations', {
         method: 'POST',
-        body: Object.fromEntries(new FormData(event.currentTarget)),
+        body: Object.fromEntries(new FormData(form)),
       })
       setIssuedCode(response.code)
-      event.currentTarget.reset()
+      form.reset()
       await load()
     } catch (error) {
       setError(error)

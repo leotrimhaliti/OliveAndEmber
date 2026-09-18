@@ -418,6 +418,23 @@ Assistant response/action:
 - Added this clarification and the preceding reviewer-links request to the log.
 
 
+18. ADMINISTRATOR INVITATION RESET ERROR
+========================================
+
+User prompt (verbatim):
+"Cannot read properties of null (reading 'reset')"
+
+The user attached a screenshot of the Administrator invitations panel. The invitation code was successfully created and displayed, but the page also showed the error “Cannot read properties of null (reading 'reset')”. The one-time invitation code itself is intentionally not copied into this log.
+
+Assistant diagnosis/action:
+- Traced the failure to the asynchronous invitation submit handler in frontend/src/pages/AccountSecurity.jsx.
+- Confirmed that the API request succeeded before the error, matching the screenshot: the code was issued, then form cleanup failed.
+- Identified that React's event.currentTarget was being read after an awaited API request. React had cleared that event reference by the time reset() ran.
+- Captured the submitted form synchronously before awaiting, then used that stable form reference for FormData and reset().
+- Ran the frontend test suite and production build successfully.
+- Kept the invitation token out of logs and source control.
+
+
 VERIFIED COMMIT TIMELINE
 ========================
 
